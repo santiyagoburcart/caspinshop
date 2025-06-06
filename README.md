@@ -103,3 +103,39 @@ Please follow standard Git workflow (fork, branch, commit, pull request).
 
 ---
 This README provides basic setup instructions. Further details on API endpoints, data models, and contribution guidelines will be added as the project evolves.
+
+## Further Details on API Endpoints
+
+
+### Product Listing Endpoint (`/api/v1/shop/products/`)
+
+This endpoint lists available products and supports pagination, filtering, and ordering.
+
+**Supported Query Parameters (as defined in `ProductFilter`):**
+
+*   **Filtering:**
+    *   `name`: Search for products by name (case-insensitive, partial match, using `icontains`).
+        *   Example: `/api/v1/shop/products/?name=لپتاپ` (searches for names containing 'لپتاپ')
+    *   `category_slug`: Filter products by the exact slug of their category (case-insensitive, using `iexact`).
+        *   Example: `/api/v1/shop/products/?category_slug=لپ-تاپ`
+    *   `category_name`: Search for products by their category name (case-insensitive, partial match, using `icontains`).
+        *   Example: `/api/v1/shop/products/?category_name=کتاب`
+    *   `min_price`: Filter products with a price greater than or equal to the given value.
+        *   Example: `/api/v1/shop/products/?min_price=1000000`
+    *   `max_price`: Filter products with a price less than or equal to the given value.
+        *   Example: `/api/v1/shop/products/?max_price=50000000`
+    *   `available`: Filter products by their availability status (`true` or `false`).
+        *   Example: `/api/v1/shop/products/?available=true`
+
+*   **Ordering:**
+    *   `ordering`: Sort products. Prepend a hyphen (`-`) for descending order.
+        *   Available fields for ordering (as defined in `ProductFilter`): `price`, `name`, `created_at`, `updated_at`.
+        *   Example (ascending by price): `/api/v1/shop/products/?ordering=price`
+        *   Example (descending by price): `/api/v1/shop/products/?ordering=-price`
+        *   Example (newest first by creation date): `/api/v1/shop/products/?ordering=-created_at`
+
+*   **Combining Filters:**
+    *   You can combine multiple filter parameters.
+        *   Example: `/api/v1/shop/products/?category_slug=لپ-تاپ&available=true&min_price=30000000&ordering=name`
+
+**Note on Persian Characters in URLs:** When using Persian characters in URL query parameters, ensure they are properly URL-encoded (e.g., `لپ-تاپ` becomes `%D9%84%D9%BE-%D8%AA%D8%A7%D9%BE`). Most HTTP clients and browsers handle this automatically.
