@@ -1,0 +1,23 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block result_list %}
+    <div class="results">
+        <div style="padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h3>{% translate "Revenue Summary" %}</h3>
+            <p>
+                <strong>{% translate "Total Verified Revenue" %}:</strong> {{ total_revenue_verified|floatformat:2 }}
+            </p>
+            <p>
+                <strong>{% translate "Total Revenue (All Orders)" %}:</strong> {{ total_revenue_all|floatformat:2 }}
+            </p>
+            <p>
+                <strong>{% translate "Verified Orders Count" %}:</strong> {{ verified_orders_count }}
+            </p>
+             <p>
+                <strong>{% translate "Total Orders Count" %}:</strong> {{ total_orders_count }}
+            </p>
+        </div>
+    </div>
+    {{ block.super }}
+{% endblock %}
