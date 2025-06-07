@@ -1,8 +1,9 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction # For atomic operations like order creation
-from .models import CustomUser, UserPaymentMethod, Category, Product, Order, OrderItem
+from .models import CustomUser, UserPaymentMethod, Category, Product, Order, OrderItem, Cart, CartItem
 
 User = get_user_model()
 
@@ -134,3 +135,58 @@ class OrderSerializer(serializers.ModelSerializer):
         order.total_paid = total_order_price
         order.save() # Save the final order details
         return order
+
+
+# --- Cart and CartItem Serializers ---
+
+class ProductLiteSerializer(serializers.ModelSerializer):
+    """A lightweight product serializer for use in cart items."""
+    class Meta:
+        model = Product
+        fields = ('id', 'name', 'slug', 'price', 'image')
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product_detail = ProductLiteSerializer(source='product', read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product', write_only=True
+    )
+    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True) # Removed redundant source
+
+    class Meta:
+        model = CartItem
+        fields = ('id', 'product_id', 'product_detail', 'quantity', 'subtotal', 'added_at')
+        read_only_fields = ('id', 'added_at')
+
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(_("Quantity must be a positive integer."))
+        return value
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True, allow_null=True)
+    total_items = serializers.IntegerField(read_only=True) # Removed redundant source
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True) # Removed redundant source
+
+    class Meta:
+        model = Cart
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'session_key',
+            'items',
+            'total_items',
+            'total_price',
+            'created_at',
+            'updated_at'
+        )
+        read_only_fields = (
+            'id',
+            'user',
+            'session_key',
+            'total_items',
+            'total_price',
+            'created_at',
+            'updated_at'
+        )

@@ -107,6 +107,92 @@ This README provides basic setup instructions. Further details on API endpoints,
 ## Further Details on API Endpoints
 
 
+## API Endpoint Summary
+
+Below is a summary of the main API endpoints available in Caspinex.
+All shop-related endpoints are prefixed with `/api/v1/shop/`.
+
+---
+
+### Authentication
+
+-   **Register User:**
+    -   `POST /api/v1/shop/auth/register/`
+    -   Creates a new user.
+    -   Payload: `{ "email", "first_name", "last_name", "phone_number" (optional), "password", "password2" }`
+
+-   **Login (Obtain JWT Tokens):**
+    -   `POST /api/v1/shop/auth/login/`
+    -   Authenticates a user and returns access and refresh tokens.
+    -   Payload: `{ "email", "password" }`
+
+-   **Refresh JWT Token:**
+    -   `POST /api/v1/shop/auth/token/refresh/`
+    -   Obtains a new access token using a valid refresh token.
+    -   Payload: `{ "refresh": "your_refresh_token" }`
+
+---
+
+### User Profile & Payment Methods
+
+-   **User Profile:**
+    -   `GET /api/v1/shop/auth/profile/`
+        -   Retrieves the profile of the currently authenticated user.
+    -   `PUT /api/v1/shop/auth/profile/`
+        -   Updates the profile of the currently authenticated user.
+    -   `PATCH /api/v1/shop/auth/profile/`
+        -   Partially updates the profile of the currently authenticated user.
+    -   Permissions: Authenticated users only.
+
+-   **User Payment Methods:** (`/api/v1/shop/payment-methods/`)
+    -   `GET /` : List payment methods for the authenticated user.
+    -   `POST /` : Add a new payment method for the authenticated user.
+    -   `GET /<id>/` : Retrieve a specific payment method.
+    -   `PUT /<id>/` : Update a specific payment method.
+    -   `PATCH /<id>/` : Partially update a specific payment method.
+    -   `DELETE /<id>/` : Delete a specific payment method.
+    -   Permissions: Authenticated users only.
+
+---
+
+### Product Catalog
+
+-   **Categories:** (`/api/v1/shop/categories/`)
+    -   `GET /` : List all product categories.
+    -   `GET /<id_or_slug>/` : Retrieve a specific category by its ID or slug.
+    -   Permissions: AllowAny (Read-only).
+
+-   **Products:** (`/api/v1/shop/products/`)
+    -   `GET /` : List all available products. Supports filtering and ordering.
+        -   See "Product Listing Endpoint" section above for filter/order parameters.
+    -   `GET /<id_or_slug>/` : Retrieve a specific product by its ID or slug.
+    -   Permissions: AllowAny (Read-only).
+
+---
+
+### Orders
+
+-   **Orders:** (`/api/v1/shop/orders/`)
+    -   `POST /` : Create a new order for the authenticated user.
+        -   Payload should include `items` (list of `{ "product_id", "quantity" }`), `billing_address`, `shipping_address`.
+    -   `GET /` : List orders for the authenticated user (or all orders if admin).
+    -   `GET /<id>/` : Retrieve a specific order.
+    -   `PUT /<id>/` : Update an order (typically restricted for users, more for admin).
+    -   `PATCH /<id>/` : Partially update an order.
+    -   `DELETE /<id>/` : Delete an order (typically restricted).
+    -   Permissions: Authenticated users for their own orders. Admins for all.
+
+-   **Admin Order Actions (example):**
+    -   `POST /api/v1/shop/orders/<id>/mark_as_shipped/`
+        -   Admin action to mark an order as shipped.
+        -   Permissions: Admin users only.
+
+---
+**Note:** Replace `<id_or_slug>`, `<id>` with actual identifiers.
+For `PUT` and `PATCH` requests, the payload will depend on the fields being updated.
+All write operations (POST, PUT, PATCH, DELETE) generally require authentication, unless specified otherwise.
+
+
 ### Product Listing Endpoint (`/api/v1/shop/products/`)
 
 This endpoint lists available products and supports pagination, filtering, and ordering.

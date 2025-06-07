@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Sum, Count
 from django.db.models.functions import Coalesce
-from .models import CustomUser, UserPaymentMethod, Category, Product, Order, OrderItem
+from .models import CustomUser, UserPaymentMethod, Category, Product, Order, OrderItem, Cart, CartItem
 
 # Actions for CustomUser
 @admin.action(description=_('Mark selected users as identity verified'))
@@ -176,3 +176,42 @@ class OrderAdmin(admin.ModelAdmin):
         extra_context['total_orders_count'] = total_orders_count
 
         return super().changelist_view(request, extra_context=extra_context)
+
+
+class CartItemInline(admin.TabularInline): # Note: This redefines CartItemInline if it existed, which is fine for this step.
+    model = CartItem
+    raw_id_fields = ['product']
+    extra = 1
+    readonly_fields = ['subtotal_display']
+
+    def subtotal_display(self, obj):
+        return obj.subtotal
+    subtotal_display.short_description = _('Subtotal')
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user_display', 'session_key_display', 'total_items_display', 'total_price_display', 'created_at', 'updated_at']
+    list_filter = ['user__email', 'created_at', 'updated_at'] # Changed user to user__email for filter if user can be None
+    search_fields = ['id', 'user__email', 'session_key']
+    inlines = [CartItemInline]
+    readonly_fields = ['id', 'created_at', 'updated_at', 'total_items_display', 'total_price_display']
+
+    def user_display(self, obj):
+        return obj.user.email if obj.user else _('Guest')
+    user_display.short_description = _('User')
+    user_display.admin_order_field = 'user__email' # Works if user is not None
+
+    def session_key_display(self, obj):
+        return obj.session_key if obj.session_key else "-"
+    session_key_display.short_description = _('Session Key')
+
+    def total_items_display(self, obj):
+        return obj.total_items
+    total_items_display.short_description = _('Total Items')
+
+    def total_price_display(self, obj):
+        return obj.total_price
+    total_price_display.short_description = _('Total Price')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('items__product').select_related('user')

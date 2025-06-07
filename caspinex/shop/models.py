@@ -1,3 +1,4 @@
+import uuid # For UUIDField
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -187,3 +188,57 @@ class OrderItem(models.Model):
 
     def get_cost(self):
         return self.price * self.quantity
+
+
+# Cart Model
+class Cart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, verbose_name=_('Cart ID'))
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='carts',
+        verbose_name=_('user')
+    )
+    session_key = models.CharField(_('session key'), max_length=40, null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('shopping cart')
+        verbose_name_plural = _('shopping carts')
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        if self.user:
+            return f"Cart {self.id} for user {self.user.email}"
+        return f"Guest Cart {self.id} (Session: {self.session_key})"
+
+    @property
+    def total_items(self):
+        return sum(item.quantity for item in self.items.all())
+
+    @property
+    def total_price(self):
+        return sum(item.subtotal for item in self.items.all())
+
+# CartItem Model
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items', verbose_name=_('cart'))
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items', verbose_name=_('product'))
+    quantity = models.PositiveIntegerField(_('quantity'), default=1)
+    added_at = models.DateTimeField(_('added at'), auto_now_add=True) # Useful for tracking when item was added
+
+    class Meta:
+        verbose_name = _('cart item')
+        verbose_name_plural = _('cart items')
+        unique_together = ('cart', 'product') # Prevent duplicate product entries for the same cart; update quantity instead.
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.quantity} of {self.product.name} in cart {self.cart.id}"
+
+    @property
+    def subtotal(self):
+        return self.product.price * self.quantity
